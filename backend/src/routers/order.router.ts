@@ -1,11 +1,11 @@
-import {Router} from 'express';
+import {query, Router} from 'express';
 import asyncHandler from 'express-async-handler';
 import { HTTP_BAD_REQUEST } from '../constants/http_status';
 import { OrderStatus } from '../constants/order_status';
 import { OrderModel } from '../models/order.model';
 import auth from '../middlewares/auth.mid';
-import dbConnect from "../configs/database.config";
-import { User } from '../models/user.model';
+
+import pool from "../configs/database.config";
 
 const router = Router();
 router.use(auth);
@@ -21,16 +21,16 @@ router.post('/create',// Este endpoint crea una nueva orden
 
         try {
             // Eliminar la orden existente del usuario si existe y tiene estado NEW
-            await dbConnect`DELETE FROM "order" WHERE user = ${order.user.id} AND status = ${OrderStatus.NEW}`;
+            await pool.query(`DELETE FROM "order" WHERE user = ${order.user.id} AND status = ${OrderStatus.NEW}`);
 
             // Insertar la nueva orden en la base de datos
-            const result = await dbConnect`
+            const result = await pool.query(`
         INSERT INTO "order" (user, status, ...) -- Agrega aquí los campos necesarios
         VALUES (${order.user.id}, ${OrderStatus.NEW}, ...) -- Agrega aquí los valores correspondientes
-        RETURNING *`;
+        RETURNING *`);
 
             // Enviar la nueva orden como respuesta
-            res.send(result[0]);
+            res.json(result.rows[0]);
         } catch (error) {
             console.error('Error al crear la orden:', error);
             res.status(HTTP_BAD_REQUEST).send('Error al crear la orden');
@@ -50,25 +50,25 @@ router.get('/newOrderForCurrentUser', // Este endpoint obtiene la nueva orden pa
 
         try {
             // Eliminar la orden existente del usuario si existe y tiene estado NEW
-            await dbConnect`
+            await pool.query(`
       DELETE FROM "order" 
-      WHERE user_id = ${order.user.id} AND status = ${OrderStatus.NEW}`;
+      WHERE user_id = ${order.user.id} AND status = ${OrderStatus.NEW}`);
 
             // Insertar la nueva orden en la base de datos
-            const result = await dbConnect`
+            const result = await pool.query(`
       INSERT INTO "order" (user_id, status, name, address, address_lat, address_lng, paymentid, totalprice, created_at, updated_at)
       VALUES (${order.user.id}, ${OrderStatus.NEW}, ${order.name}, ${order.address}, ${order.addressLatLng.lat}, ${order.addressLatLng.lng}, ${order.paymentid}, ${order.totalprice}, NOW(), NOW())
-      RETURNING *`;
+      RETURNING *`);
 
             // Insertar los items de la orden en la tabla orderitem
             for (const item of order.items) {
-                await dbConnect`
+                await pool.query(`
         INSERT INTO "orderitem" (order_id, food_id, price, quantity)
-        VALUES (${result[0].id}, ${item.food_id}, ${item.price}, ${item.quantity})`;
+        VALUES (${result.rows[0].id}, ${item.food_id}, ${item.price}, ${item.quantity})`);
             }
 
             // Enviar la nueva orden como respuesta
-            res.send(result[0]);
+            res.json(result.rows[0]);
         } catch (error) {
             console.error('Error al crear la orden:', error);
             res.status(HTTP_BAD_REQUEST).send('Error al crear la orden');
@@ -86,13 +86,13 @@ router.post('/pay', asyncHandler( async (req:any, res) => {
 
     try {
         // Actualizar la orden con el ID de pago y cambiar el estado a PAYED
-        const updatedOrder = await dbConnect`
+        const updatedOrder = await pool.query(`
       UPDATE "order"
       SET paymentid = ${paymentId}, status = ${OrderStatus.PAYED}
       WHERE id = ${order.id}
-      RETURNING *`;
+      RETURNING *`);
 
-        res.send(updatedOrder[0].id);
+        res.json(updatedOrder.rows[0].id);
     } catch (error) {
         console.error('Error al actualizar la orden:', error);
         res.status(HTTP_BAD_REQUEST).send('Error al actualizar la orden');

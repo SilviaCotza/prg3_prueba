@@ -5,7 +5,7 @@ import asyncHandler from 'express-async-handler';
 import { User, UserModel } from '../models/user.model';
 import { HTTP_BAD_REQUEST } from '../constants/http_status';
 import bcrypt from 'bcryptjs';
-import dbConnect from "../configs/database.config";
+import pool from "../configs/database.config";
 const router = Router();
 
 router.get("/seed", asyncHandler(
@@ -27,19 +27,19 @@ router.post("/login", asyncHandler(//se cambió el endpoint para que funcione co
 
         try {
             // Realiza la consulta para obtener el usuario con el correo electrónico proporcionado
-            const user = await dbConnect`
+            const user = await pool.query(`
         SELECT * FROM "user"
         WHERE email = ${email}
-      `;//se cambió de UserModel.findOne a dbConnect ya que findOne no es compatible con postgres solo con mongo
+      `);//se cambió de UserModel.findOne a dbConnect ya que findOne no es compatible con postgres solo con mongo
 
-            if (user.length === 0) {
+            if (user.rows.length === 0) {
                 // Si no se encuentra ningún usuario con el correo electrónico proporcionado, devuelve un error
                 res.status(HTTP_BAD_REQUEST).send("Usuario o contraseña inválido!");
                 return;
             }
 
             // Obtén el primer usuario de la lista (debería haber solo uno)
-            const userData = user[0];
+            const userData = user.rows[0];
 
             // Compara la contraseña proporcionada con la contraseña almacenada en la base de datos
             if (await bcrypt.compare(password, userData.password)) {
@@ -65,8 +65,8 @@ router.post('/register', asyncHandler(
 
         //constante que guarda los datos del usuario en la BD, espera la respuesta de la BD
         //se cambiaron las variables con mayusculas por minusculas ya que se cambió de mongo a postgres y provoca error
-        const dbUser = await dbConnect `insert into "user" (name, email, password, address, isadmin) 
-        values (${name}, ${email}, ${encryptedPassword}, ${address}, false) returning *`;
+        const dbUser = await pool.query (`insert into "user" (name, email, password, address, isadmin) 
+        values (${name}, ${email}, ${encryptedPassword}, ${address}, false) returning *`);
 
         res.send(generateTokenReponse(dbUser));
     }
