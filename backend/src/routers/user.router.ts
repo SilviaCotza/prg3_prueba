@@ -27,10 +27,7 @@ router.post("/login", asyncHandler(//se cambió el endpoint para que funcione co
 
         try {
             // Realiza la consulta para obtener el usuario con el correo electrónico proporcionado
-            const user = await pool.query(`
-        SELECT * FROM "user"
-        WHERE email = ${email}
-      `);//se cambió de UserModel.findOne a dbConnect ya que findOne no es compatible con postgres solo con mongo
+            const user = await pool.query('SELECT * FROM "user" WHERE email = $1', [email]);
 
             if (user.rows.length === 0) {
                 // Si no se encuentra ningún usuario con el correo electrónico proporcionado, devuelve un error
@@ -65,10 +62,10 @@ router.post('/register', asyncHandler(
 
         //constante que guarda los datos del usuario en la BD, espera la respuesta de la BD
         //se cambiaron las variables con mayusculas por minusculas ya que se cambió de mongo a postgres y provoca error
-        const dbUser = await pool.query (`insert into "user" (name, email, password, address, isadmin) 
-        values (${name}, ${email}, ${encryptedPassword}, ${address}, false) returning *`);
+        // name, email, password, address, isadmin
+          const dbUser = await pool.query('INSERT INTO "user" (name, email, password, address, isadmin) VALUES ($1, $2, $3, $4, $5) RETURNING *', [name, email, encryptedPassword, address, false]);
 
-        res.send(generateTokenReponse(dbUser));
+        res.json(generateTokenReponse(dbUser));
     }
 ))
 

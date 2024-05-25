@@ -21,12 +21,13 @@ router.post('/create',// Este endpoint crea una nueva orden
 
         try {
             // Eliminar la orden existente del usuario si existe y tiene estado NEW
-            await pool.query(`DELETE FROM "order" WHERE user = ${order.user.id} AND status = ${OrderStatus.NEW}`);
+            console.log('order', order);
+            await pool.query(` DELETE FROM "order" WHERE user = ${order.user.id} AND status = ${OrderStatus.NEW}`);
 
             // Insertar la nueva orden en la base de datos
             const result = await pool.query(`
-        INSERT INTO "order" (user, status, ...) -- Agrega aquí los campos necesarios
-        VALUES (${order.user.id}, ${OrderStatus.NEW}, ...) -- Agrega aquí los valores correspondientes
+        INSERT INTO "order" (user, status, name, address, address_lat, address_lng, paymentid, totalprice, created_at, updated_at)
+        VALUES (${OrderStatus.NEW}, ${order.name}, ${order.address}, ${order.addressLatLng.lat}, ${order.addressLatLng.lng}, ${order.paymentid}, ${order.totalprice}, NOW(), NOW())
         RETURNING *`);
 
             // Enviar la nueva orden como respuesta
@@ -50,15 +51,13 @@ router.get('/newOrderForCurrentUser', // Este endpoint obtiene la nueva orden pa
 
         try {
             // Eliminar la orden existente del usuario si existe y tiene estado NEW
-            await pool.query(`
-      DELETE FROM "order" 
-      WHERE user_id = ${order.user.id} AND status = ${OrderStatus.NEW}`);
+            await pool.query(` DELETE FROM "order" WHERE user = ${order.user.id} AND status = ${OrderStatus.NEW}`);
 
             // Insertar la nueva orden en la base de datos
             const result = await pool.query(`
-      INSERT INTO "order" (user_id, status, name, address, address_lat, address_lng, paymentid, totalprice, created_at, updated_at)
-      VALUES (${order.user.id}, ${OrderStatus.NEW}, ${order.name}, ${order.address}, ${order.addressLatLng.lat}, ${order.addressLatLng.lng}, ${order.paymentid}, ${order.totalprice}, NOW(), NOW())
-      RETURNING *`);
+        INSERT INTO "order" (user, status, name, address, address_lat, address_lng, paymentid, totalprice, created_at, updated_at)
+        VALUES (${order.user.id}, ${OrderStatus.NEW}, ${order.name}, ${order.address}, ${order.addressLatLng.lat}, ${order.addressLatLng.lng}, ${order.paymentid}, ${order.totalprice}, NOW(), NOW())
+        RETURNING *`);
 
             // Insertar los items de la orden en la tabla orderitem
             for (const item of order.items) {
