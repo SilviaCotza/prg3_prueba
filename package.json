@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@types/pg": "^8.11.6",
-    "@angular/cli": "^16.0.0"  // Add the appropriate Angular CLI version here
+    "@angular/cli": "^16.0.0" 
   }
 }
 
