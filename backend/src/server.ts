@@ -1,31 +1,37 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import path from 'path';
+import dotenv from 'dotenv';
+dotenv.config();
+import path from 'path';
 import express from "express";
 import cors from "cors";
 import foodRouter from './routers/food.router';
 import userRouter from './routers/user.router';
 import orderRouter from './routers/order.router';
 
-
 const app = express();
 app.use(express.json());
 app.use(cors({
-    credentials:true,
-    origin:["http://localhost:4200"]
+    credentials: true,
+    origin: ["http://localhost:4200"]
 }));
 
 app.use("/api/foods", foodRouter);
 app.use("/api/users", userRouter);
 app.use("/api/orders", orderRouter);
-app.use(express.static('public'));
+
+// Log the resolved path to help with debugging
+console.log('Serving static files from:', path.resolve('public'));
+
+app.use(express.static(path.resolve('public')));
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname,'public', 'index.html'))
-})
+    const indexPath = path.resolve('public', 'index.html');
+    console.log('Serving index.html from:', indexPath);
+    res.sendFile(indexPath);
+});
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-    console.log("Website served on http://localhost:"+port);
-
-
-})
+    console.log("Website served on http://localhost:" + port);
+});
