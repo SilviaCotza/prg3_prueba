@@ -8,7 +8,7 @@
     "dev": "cd frontend && npm start & cd backend && npm start",
     "start": "cd backend/built && node server.js",
     "prebuild": "cd backend && npm run build",
-    "build": "cd frontend && npm run build"
+    "build": "cd frontend && npm run build && cp -R dist/frontend/* ../backend/built/public"
   },
   "dependencies": {
     "pg": "^8.11.5",
@@ -18,3 +18,4 @@
     "@types/pg": "^8.11.6"
   }
 }
+
